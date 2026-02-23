@@ -119,20 +119,90 @@ This project includes three mandatory demonstrations of GitOps capabilities:
 
 *   **Scenario**: Update the Nginx application image in `app/deployment.yaml` from `nginx:1.25` to `nginx:1.26`.
 *   **Action**: Commit and push the change to the `main` branch.
-*   **Observation**: ArgoCD automatically detects the change, syncs the application, and updates the deployment in the `staging` namespace. Verify the new image version in the Kubernetes cluster.
+*   **Commands Executed**:
+    ```bash
+    cd repo_dir
+    sed -i 's/image: nginx:1.25/image: nginx:1.26/g' app/deployment.yaml
+    git add app/deployment.yaml
+    git commit -m "Demo 1: Update Nginx to 1.26"
+    git push origin main
+    # On Azure VM, after waiting for sync
+    kubectl get deployment staging-demo-app -n staging -o wide
+    kubectl get deployment staging-demo-app -n staging -o jsonpath='{.spec.template.spec.containers[0].image}'
+    ```
+*   **Expected Output**:
+    ```
+    NAME               READY   UP-TO-DATE   AVAILABLE   AGE     CONTAINERS   IMAGES       SELECTOR
+    staging-demo-app   1/1     1            1           2d21h   nginx        nginx:1.26   app=demo-app,env=staging
+    nginx:1.26
+    ```
+*   **Observation**: ArgoCD automatically detects the change, syncs the application, and updates the deployment in the `staging` namespace. The `nginx:1.26` image is now running.
+*   **Screenshot Guidance**:
+    *   ArgoCD UI: Application details showing `Synced` status and the new image version (`nginx:1.26`).
+    *   ArgoCD UI: History and Rollback tab showing the new deployment entry for the image update.
 
 ### DEMO 2: Drift Detection & Self-Heal
 
 *   **Scenario**: Manually scale down the `staging-demo-app` deployment in the Kubernetes cluster to 0 replicas.
-*   **Action**: `kubectl scale deployment staging-demo-app -n staging --replicas=0`
+*   **Action**: Manually scale down the deployment, then observe ArgoCD's self-healing.
+*   **Commands Executed**:
+    ```bash
+    # On Azure VM
+    kubectl scale deployment staging-demo-app -n staging --replicas=0
+    kubectl get deployment staging-demo-app -n staging # Immediately after scaling down
+    # After waiting for self-heal
+    kubectl get deployment staging-demo-app -n staging
+    ```
+*   **Expected Output**:
+    ```
+    # After scaling down
+    NAME               READY   UP-TO-DATE   AVAILABLE   AGE
+    staging-demo-app   1/0     1            1           2d21h
+    # After self-heal
+    NAME               READY   UP-TO-DATE   AVAILABLE   AGE
+    staging-demo-app   1/1     1            1           2d21h
+    ```
 *   **Observation**: ArgoCD detects the manual change (drift) and, due to `selfHeal: true` in the `Application` manifest, automatically reverts the deployment back to 1 replica, restoring the desired state.
+*   **Screenshot Guidance**:
+    *   ArgoCD UI: Application status showing `OutOfSync` after manual change.
+    *   ArgoCD UI: Application status returning to `Synced` after self-healing.
+    *   `kubectl get deployment` output showing `READY 1/0` then `1/1`.
 
 ### DEMO 3: Rollback (MOST IMPORTANT)
 
 *   **Scenario**: Introduce a bad Nginx image (e.g., `nginx:nonexistent`) in `app/deployment.yaml`.
-*   **Action**: Commit and push the bad configuration. Observe the application failing (e.g., `ImagePullBackOff` status).
-*   **Action**: Perform a `git revert` on the commit that introduced the bad image and push the revert commit.
-*   **Observation**: ArgoCD automatically detects the revert and rolls back the application to the previous stable version, restoring functionality.
+*   **Action**: Commit and push the bad configuration. Observe the application failing. Then, perform a `git revert` and push the revert commit.
+*   **Commands Executed**:
+    ```bash
+    cd repo_dir
+    sed -i 's/image: nginx:1.26/image: nginx:nonexistent/g' app/deployment.yaml
+    git add app/deployment.yaml
+    git commit -m "Demo 3: Introduce bad image"
+    git push origin main
+    # On Azure VM, after waiting for failure
+    kubectl get pods -n staging
+
+    git revert HEAD --no-edit
+    git push origin main
+    # On Azure VM, after waiting for rollback
+    kubectl get pods -n staging
+    kubectl get deployment staging-demo-app -n staging -o jsonpath='{.spec.template.spec.containers[0].image}'
+    ```
+*   **Expected Output**:
+    ```
+    # After introducing bad image
+    NAME                                READY   STATUS             RESTARTS   AGE
+    staging-demo-app-57cf4dcbd9-qd7bh   0/1     ImagePullBackOff   0          75s
+    # After rollback
+    NAME                                READY   STATUS    RESTARTS   AGE
+    staging-demo-app-57cf4dcbd9-qd7bh   1/1     Running   0          75s
+    nginx:1.26
+    ```
+*   **Observation**: Initially, pods will be in `ImagePullBackOff` or `ErrImagePull` state. After Git revert, ArgoCD automatically detects the change and rolls back the application to the previous stable version (`nginx:1.26`), restoring functionality.
+*   **Screenshot Guidance**:
+    *   ArgoCD UI: Application status showing `Degraded` health after bad deployment.
+    *   ArgoCD UI: History and Rollback tab showing the bad deployment and the subsequent successful rollback.
+    *   `kubectl get pods` output showing failing pods and then healthy pods after rollback.
 
 ## 7. Key DevOps/SRE Concepts Demonstrated
 
