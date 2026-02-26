@@ -204,7 +204,7 @@ This project includes three mandatory demonstrations of GitOps capabilities:
     *   ArgoCD UI: History and Rollback tab showing the bad deployment and the subsequent successful rollback.
     *   `kubectl get pods` output showing failing pods and then healthy pods after rollback.
 
-## 7. Key DevOps/SRE Concepts Demonstrated
+## 7. Key Concepts Demonstrated
 
 *   **Declarative Configuration**: All infrastructure and application states are defined in Git.
 *   **Single Source of Truth**: Git repository serves as the authoritative source for desired state.
@@ -213,15 +213,3 @@ This project includes three mandatory demonstrations of GitOps capabilities:
 *   **Observability**: ArgoCD provides visibility into application health and sync status.
 *   **Reliability & Recoverability**: Self-healing and easy rollback mechanisms ensure application stability.
 
-## 8. Interview Talking Points
-
-*   Discuss the benefits of GitOps over traditional CI/CD approaches for deployment and management.
-*   Explain how ArgoCD acts as a reconciliation engine, continuously monitoring Git and the cluster.
-*   Detail the role of Kustomize in managing environment-specific configurations (staging vs. production).
-*   Describe the self-healing mechanism and its importance in maintaining desired state.
-*   Highlight the rollback process and how Git-based rollbacks are more reliable and auditable.
-*   Emphasize the security benefits of GitOps, including audit trails and reduced direct access to clusters.
-
-## 9. Resume Bullet
-
-*   **Engineered and implemented a robust GitOps workflow using ArgoCD and Kustomize for automated, self-healing deployments across staging and production Kubernetes environments, significantly enhancing reliability and accelerating delivery.**
