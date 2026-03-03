@@ -55,7 +55,7 @@ This project assumes an AlmaLinux VM on Azure with SSH access and `gh` CLI confi
 
 1.  **SSH into Azure VM**:
     ```bash
-    ssh -i raajkumar_key azureuser@<your-vm-ip>
+    ssh -i key azureuser@<your-vm-ip>
     ```
 
 2.  **Install Prerequisites (Docker, k3s, kubectl, ArgoCD CLI)**:
@@ -137,7 +137,6 @@ This project includes three mandatory demonstrations of GitOps capabilities:
     nginx:1.26
     ```
 *   **Observation**: ArgoCD automatically detects the change, syncs the application, and updates the deployment in the `staging` namespace. The `nginx:1.26` image is now running.
-*   **Screenshot Guidance**:
     *   ArgoCD UI: Application details showing `Synced` status and the new image version (`nginx:1.26`).
     *   ArgoCD UI: History and Rollback tab showing the new deployment entry for the image update.
 
@@ -163,7 +162,6 @@ This project includes three mandatory demonstrations of GitOps capabilities:
     staging-demo-app   1/1     1            1           2d21h
     ```
 *   **Observation**: ArgoCD detects the manual change (drift) and, due to `selfHeal: true` in the `Application` manifest, automatically reverts the deployment back to 1 replica, restoring the desired state.
-*   **Screenshot Guidance**:
     *   ArgoCD UI: Application status showing `OutOfSync` after manual change.
     *   ArgoCD UI: Application status returning to `Synced` after self-healing.
     *   `kubectl get deployment` output showing `READY 1/0` then `1/1`.
@@ -199,7 +197,6 @@ This project includes three mandatory demonstrations of GitOps capabilities:
     nginx:1.26
     ```
 *   **Observation**: Initially, pods will be in `ImagePullBackOff` or `ErrImagePull` state. After Git revert, ArgoCD automatically detects the change and rolls back the application to the previous stable version (`nginx:1.26`), restoring functionality.
-*   **Screenshot Guidance**:
     *   ArgoCD UI: Application status showing `Degraded` health after bad deployment.
     *   ArgoCD UI: History and Rollback tab showing the bad deployment and the subsequent successful rollback.
     *   `kubectl get pods` output showing failing pods and then healthy pods after rollback.
